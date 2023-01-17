@@ -7,6 +7,9 @@ import numpy as np
 path = "D:\Python_Codes\Deep_Learning\Advanced Tensorflow\Multi_Label Classification\FashionNet\Week2_dataset\clothes_dataset\dataset"
 
 class PreProcessing():
+    def __init__(self, path):
+        self.path = path
+        
     def load_data(path): # load data and preprocessing (normalize, resize)
         all_images = []
         category = []
