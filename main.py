@@ -20,8 +20,13 @@ def load_data(path): # load data and preprocessing (normalize, resize)
 
         if i % 100 == 0:
             print("{} percent of 2500 data has been loaded".format(i))
-            
+
     all_images = np.array(all_images, dtype=float)/255.0
     return all_images, category, color
-load_data(path=path)    
+all_images, category, color = load_data(path=path)    
 
+def split_data(all_images, category, color):
+    split = train_test_split(all_images, category, color, test_size=0.2)
+    (trainX, testX, trainCategory, testCategory, trainColor, testColor) = split
+    return trainX, testX, trainCategory, testCategory, trainColor, testColor
+trainX, testX, trainCategory, testCategory, trainColor, testColor = split_data(all_images, category, color)
