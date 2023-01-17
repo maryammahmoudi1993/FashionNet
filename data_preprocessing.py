@@ -1,4 +1,5 @@
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelBinarizer
 import cv2 as cv 
 from glob import glob
 import numpy as np
@@ -22,10 +23,20 @@ class PreProcessing():
 
         all_images = np.array(all_images, dtype=float)/255.0
         return all_images, category, color
-    all_images, category, color = load_data(path=path)    
+    #all_images, category, color = load_data(path=path)   
 
-    def split_data(all_images, category, color):
-        split = train_test_split(all_images, category, color, test_size=0.2)
+    def label_Bin(category, color):
+        categoryLB = LabelBinarizer()
+        colorLB = LabelBinarizer() 
+        category_labels = categoryLB.fit_transform(category)
+        color_labels = colorLB.fit_transform(color)
+        return category_labels, color_labels
+
+
+    def split_data(all_images, category_labels, color_labels):
+        split = train_test_split(all_images, category_labels, color_labels, test_size=0.2)
         (trainX, testX, trainCategory, testCategory, trainColor, testColor) = split
         return trainX, testX, trainCategory, testCategory, trainColor, testColor
-    trainX, testX, trainCategory, testCategory, trainColor, testColor = split_data(all_images, category, color)
+    #trainX, testX, trainCategory, testCategory, trainColor, testColor = split_data(all_images, category_labels, color_labels)
+
+    
