@@ -37,5 +37,25 @@ class FashionNet():
         x = layers.Conv2D(512, (3,3), strides=(2,2), activation="relu")(x)
         x = layers.MaxPool2D()(x)
         x = layers.Flatten()(x)
-        x = layers.Dense()
+        cat_net = layers.Dense(4, activation="softmax")
+        col_net = layers.Dense(3, activation="softmax")
+
+        net = models.Model(inputs=input_layer, outputs=[cat_net, col_net], name="FashionNet")
+
+        losses = {
+            "category_output":"categorical_crossentropy",
+            "color_output":"categorical_crossentropy"
+        }
+
+        loss_weight = {"category_output":1.0, "color_output":1.0}
+
+        net.compile(optimizer="adam", loss=losses, loss_weights=loss_weight, metrics=["accuracy"])
+        return net
+
+    def load_net(net):
+        H = net.fit(x = trainX, y = {"category_output": trainCategory, "color_output": trainColor},
+                    validation_data=(testX,{"category_output":testCategory, "color_output":testColor}), 
+                    epochs = 40, verbose = 1)
+        return H
+        
 
