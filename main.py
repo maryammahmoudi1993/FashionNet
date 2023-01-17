@@ -1,4 +1,4 @@
-import deep_net
+#import deep_net
 import utility
 from sklearn.model_selection import train_test_split
 import cv2 as cv 
