@@ -2,21 +2,21 @@ import tensorflow as tf
 from keras import layers, models
 from data_preprocessing import PreProcessing
 
-path = "D:\Python_Codes\Deep_Learning\Advanced Tensorflow\Multi_Label Classification\FashionNet\Week2_dataset\clothes_dataset\dataset"
-all_images, category, color = PreProcessing.load_data(path=path)    
-trainX, testX, trainCategory, testCategory, trainColor, testColor = PreProcessing.split_data(all_images, category, color)
+
 
 class FashionNet():
-    def __init__(self, trainX, testX, trainCategory, testCategory, trainColor, testColor):
+    epochs = 40
+    def __init__(self, trainX, testX, trainCategory, testCategory, trainColor, testColor, epochs):
         self.trainX = trainX
         self.testX = testX
         self.trainCategory = trainCategory
         self.testCategory = testCategory
         self.trainColor = trainColor
         self.testColor = testColor
+        self.epochs = epochs
 
 
-    def build(): # VGG16 architecture
+    def build(self): # VGG16 architecture
         input_layer = layers.Input(shape=(128,128,3))
         x = layers.Conv2D(64, (3,3), activation="relu")(input_layer)
         x = layers.Conv2D(64, (3,3), activation="relu")(x)
@@ -50,12 +50,19 @@ class FashionNet():
         loss_weight = {"category_output":1.0, "color_output":1.0}
 
         net.compile(optimizer="adam", loss=losses, loss_weights=loss_weight, metrics=["accuracy"])
-        return net
+        H = net.fit(x = self.trainX, y = {"category_output": self.trainCategory, "color_output": self.trainColor},
+                    validation_data=(self.testX,{"category_output":self.testCategory, "color_output":self.testColor}), 
+                    epochs=self.epochs , verbose = 1)
+        net.save("FashionNet.h5")
+        return net, H
 
-    def load_net(net):
-        H = net.fit(x = trainX, y = {"category_output": trainCategory, "color_output": trainColor},
-                    validation_data=(testX,{"category_output":testCategory, "color_output":testColor}), 
-                    epochs = 40, verbose = 1)
-        return H
-        
+    '''def load_net(self,net):
+        H = self.net.fit(x = self.trainX, y = {"category_output": self.trainCategory, "color_output": self.trainColor},
+                    validation_data=(self.testX,{"category_output":self.testCategory, "color_output":self.testColor}), 
+                    epochs=self.epochs , verbose = 1)
+        return H'''
+
+    '''def save_model(self, net):
+        net.save
+        '''
 
