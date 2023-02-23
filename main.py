@@ -9,7 +9,8 @@ trainX, testX, trainCategory, testCategory, trainColor, testColor = PreProcessin
 
 # create and train the FashionNet model
 model = FashionNet(trainX, testX, trainCategory, testCategory, trainColor, testColor, epochs=40)
-trained_model, history = model.build()
+trained_model, history = model.build({"category_output": trainCategory, "color_output": trainColor})
+
 
 # plot the training and validation accuracy
 plot_show.plot_accuracy(history, "category_output")
