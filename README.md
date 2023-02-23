@@ -35,12 +35,10 @@ The dataset used in this project is a collection of clothes images with correspo
     └── ...
 #Usage
 Clone the repository:
-bash
 
 git clone https://github.com/<username>/Multi-Label-Classification-FashionNet.git
 cd Multi-Label-Classification-FashionNet
 # Load and preprocess data:
-scss
 
 from data_preprocessing import PreProcessing
 path = "path/to/dataset"
