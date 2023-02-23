@@ -1,18 +1,28 @@
-import matplotlib.pyplot as plt 
-from deep_net import FashionNet
+import matplotlib.pyplot as plt
+import numpy as np
 
-class plot_show():
-    '''fashnet = FashionNet()
-    H, net = fashnet.build()'''
+def plot_show(H, epochs):
+    plt.style.use("ggplot")
+    plt.figure()
 
-    def __init__(self, H):
-        self.H = H
+    # Plot the training loss and accuracy
+    N = epochs
+    plt.plot(np.arange(0, N), H.history["loss"], label="train_loss")
+    plt.plot(np.arange(0, N), H.history["category_output_loss"], label="train_category_loss")
+    plt.plot(np.arange(0, N), H.history["color_output_loss"], label="train_color_loss")
+    plt.plot(np.arange(0, N), H.history["category_output_accuracy"], label="train_category_acc")
+    plt.plot(np.arange(0, N), H.history["color_output_accuracy"], label="train_color_acc")
 
-    def plt_show(self,H):
-        plt.plot(self.H.history["category_output_accuracy"], label="category acc")
-        plt.plot(H.history["val_category_output_accuracy"], label="val category acc")
-        plt.xlabel("epochs")
-        plt.ylabel("accuracy")
-        plt.legend()
-        plt.show()
-        plt.close()
+    # Plot the validation loss and accuracy
+    plt.plot(np.arange(0, N), H.history["val_loss"], label="val_loss")
+    plt.plot(np.arange(0, N), H.history["val_category_output_loss"], label="val_category_loss")
+    plt.plot(np.arange(0, N), H.history["val_color_output_loss"], label="val_color_loss")
+    plt.plot(np.arange(0, N), H.history["val_category_output_accuracy"], label="val_category_acc")
+    plt.plot(np.arange(0, N), H.history["val_color_output_accuracy"], label="val_color_acc")
+
+    # Add title and labels to the plot
+    plt.title("Training Loss and Accuracy")
+    plt.xlabel("Epoch #")
+    plt.ylabel("Loss/Accuracy")
+    plt.legend(loc="lower left")
+    plt.show()
