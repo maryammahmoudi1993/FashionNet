@@ -77,17 +77,42 @@ def build_dense(hidden=64):
     ], name="dense_baseline")
 
 
-def build_cnn(filters=(16, 32)):
-    """The first CNN: two (convolution, pooling) blocks, then a decision layer."""
-    return keras.Sequential([
-        keras.layers.Input((28, 28, 1)),
+def augmentation_layers(strength="mild"):
+    """Random changes applied to training pictures only (Keras switches them off for predictions).
+
+    "mild": mirror left-right and shift by up to 6% (about 1.7 pixels).
+    "strong": the same plus a small rotation and a zoom.
+    """
+    layers = [
+        keras.layers.RandomFlip("horizontal"),            # a left sleeve may look like a right sleeve
+        keras.layers.RandomTranslation(0.06, 0.06),       # shift by up to 6% of the picture size
+    ]
+    if strength == "strong":
+        layers += [
+            keras.layers.RandomRotation(0.05),            # turn by up to 5% of a full circle (18 degrees)
+            keras.layers.RandomZoom(0.2),                 # zoom in or out by up to 20%
+        ]
+    return layers
+
+
+def build_cnn(filters=(16, 32), augment=None, name=None):
+    """The first CNN: two (convolution, pooling) blocks, then a decision layer.
+
+    ``augment`` is None (no augmentation), "mild" or "strong": the random picture changes
+    are placed in front of the network and are only active while training.
+    """
+    layers = [keras.layers.Input((28, 28, 1))]
+    if augment:
+        layers += augmentation_layers(augment)
+    layers += [
         keras.layers.Conv2D(filters[0], 3, activation="relu"),
         keras.layers.MaxPooling2D(),
         keras.layers.Conv2D(filters[1], 3, activation="relu"),
         keras.layers.MaxPooling2D(),
         keras.layers.Flatten(),
         keras.layers.Dense(10, activation="softmax"),
-    ], name="first_cnn")
+    ]
+    return keras.Sequential(layers, name=name or (f"cnn_{augment}" if augment else "first_cnn"))
 
 
 def compile_model(model):
@@ -147,4 +172,56 @@ def plot_predictions(x, y_true, probs, n=10, wrong=False):
         color = "tab:red" if wrong else "tab:green"
         ax.set_title(f"{CLASS_NAMES[pred[i]]} ({probs[i, pred[i]]:.0%})\ntrue: {CLASS_NAMES[y_true[i]]}",
                      fontsize=8, color=color)
+    return fig
+
+
+def plot_gap(histories, labels):
+    """Training versus validation accuracy and loss, one colour per model (dashed = training)."""
+    fig, (a, b) = plt.subplots(1, 2, figsize=(10.5, 3.8))
+    for k, (h, label) in enumerate(zip(histories, labels)):
+        color = f"C{k}"
+        epochs = range(1, len(h["accuracy"]) + 1)
+        a.plot(epochs, h["accuracy"], "--", color=color, alpha=.8, label=f"{label}: training")
+        a.plot(epochs, h["val_accuracy"], "-", color=color, label=f"{label}: validation")
+        b.plot(epochs, h["loss"], "--", color=color, alpha=.8, label=f"{label}: training")
+        b.plot(epochs, h["val_loss"], "-", color=color, label=f"{label}: validation")
+    a.set_title("accuracy (higher is better)"); b.set_title("loss (lower is better)")
+    for ax in (a, b):
+        ax.set_xlabel("epoch"); ax.grid(alpha=.3)
+    a.set_ylim(0.7, 1.0); a.legend(fontsize=7)
+    return fig
+
+
+def plot_augmented(image, n=8, strength="mild"):
+    """The same picture ``n`` times after random changes (the first panel is the original)."""
+    layers = keras.Sequential(augmentation_layers(strength))
+    fig, axes = plt.subplots(1, n + 1, figsize=(1.35 * (n + 1), 1.9))
+    axes[0].imshow(image[:, :, 0], cmap="gray_r"); axes[0].set_title("original", fontsize=8)
+    batch = np.repeat(image[None], n, axis=0)
+    changed = layers(batch, training=True).numpy()
+    for ax, im in zip(axes[1:], changed):
+        ax.imshow(im[:, :, 0], cmap="gray_r", vmin=0, vmax=1)
+    for ax in axes:
+        ax.axis("off")
+    return fig
+
+
+def confusion_matrix(y_true, y_pred):
+    """Rows = true class, columns = predicted class, entries = number of pictures."""
+    matrix = np.zeros((10, 10), dtype=int)
+    np.add.at(matrix, (y_true, y_pred), 1)
+    return matrix
+
+
+def plot_confusion(matrix):
+    """Confusion matrix as a heat map with the counts written in the cells."""
+    fig, ax = plt.subplots(figsize=(8, 7))
+    ax.imshow(matrix, cmap="Blues")
+    ax.set_xticks(range(10)); ax.set_xticklabels(CLASS_NAMES, rotation=60, ha="right")
+    ax.set_yticks(range(10)); ax.set_yticklabels(CLASS_NAMES)
+    ax.set_xlabel("predicted class"); ax.set_ylabel("true class")
+    for i in range(10):
+        for j in range(10):
+            ax.text(j, i, matrix[i, j], ha="center", va="center", fontsize=7,
+                    color="white" if matrix[i, j] > matrix.max() / 2 else "black")
     return fig

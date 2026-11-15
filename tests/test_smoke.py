@@ -42,3 +42,12 @@ def test_training_is_reproducible():
         history = model.fit(x, y, epochs=1, batch_size=64, verbose=0)
         losses.append(history.history["loss"][0])
     assert losses[0] == losses[1]
+
+
+def test_augmented_model_and_confusion_matrix():
+    batch = np.zeros((2, 28, 28, 1), dtype="float32")
+    assert fashion.build_cnn(augment="mild")(batch).shape == (2, 10)
+    assert fashion.build_cnn(augment="strong")(batch).shape == (2, 10)
+    y_true = np.array([0, 0, 1, 2]); y_pred = np.array([0, 1, 1, 2])
+    matrix = fashion.confusion_matrix(y_true, y_pred)
+    assert matrix[0, 0] == 1 and matrix[0, 1] == 1 and matrix.sum() == 4
