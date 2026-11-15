@@ -6,20 +6,22 @@
 
 [![Open notebook 01 in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maryammahmoudi1993/FashionNet/blob/main/notebooks/01_images_as_numbers_and_first_cnn.ipynb)
 
-> **Status: in progress.** Notebook 01 is ready. Notebooks 02 and 03 are planned (see the table of contents).
+> **Status: in progress.** Notebooks 01 and 02 are ready. Notebook 03 is planned (see the table of contents).
 
 ## Who this is for
 
 - **For:** learners who know basic Python and NumPy and have never trained a neural network on images.
 - **Not needed:** a GPU, a maths degree, or your own data. Everything runs on a laptop CPU.
-- **Time:** about 25 minutes for notebook 01 (the training cells take roughly one minute).
+- **Time:** about 25 minutes for notebook 01 (about one minute of training) and about 30 minutes for notebook 02 (about six minutes of training).
 
-## What you will learn (notebook 01)
+## What you will learn
 
-- A picture is a grid of numbers, and why that matters.
-- What a convolution and a pooling layer do, shown with hand-made kernels.
-- How to train a first CNN and why it beats a network that ignores pixel neighbours.
-- Why we keep separate training, validation and test sets.
+- A picture is a grid of numbers, and why that matters. (notebook 01)
+- What a convolution and a pooling layer do, shown with hand-made kernels. (01)
+- How to train a first CNN and why it beats a network that ignores pixel neighbours. (01)
+- Why we keep separate training, validation and test sets. (01)
+- How to spot a network that memorises, and how to test data augmentation honestly with several seeds. (02)
+- How to read a confusion matrix to see which classes get mixed up. (02)
 
 ## The pipeline in one picture
 
@@ -53,7 +55,7 @@ jupyter lab notebooks/
 
 If `jupyter` is not found, run `pip install jupyterlab` first (it is not needed to run the tests).
 
-Check that everything works (runs the smoke tests and every notebook, about two minutes):
+Check that everything works (runs the smoke tests and every notebook, about eight minutes):
 
 ```bash
 python -m pytest -q
@@ -66,13 +68,15 @@ The data (Fashion-MNIST, a few megabytes) is downloaded automatically on the fir
 | # | Notebook | You will learn | Status |
 |---|---|---|---|
 | 01 | [Images are numbers: your first CNN](notebooks/01_images_as_numbers_and_first_cnn.ipynb) | pixels, convolution, pooling, a first CNN, honest evaluation | ready |
-| 02 | Make it robust: augmentation, learning curves, confusion matrix | planned | |
+| 02 | [Make it robust: augmentation, learning curves, confusion matrix](notebooks/02_augmentation_curves_confusion.ipynb) | memorising versus learning, augmentation tested with 3 seeds, reading a confusion matrix | ready |
 | 03 | Look inside: Grad-CAM, then versus now | planned | |
 
 Other folders: [`src/`](src) shared code, [`tests/`](tests) smoke test and a test that runs every notebook,
 [`legacy/`](legacy) the original 2023 files (untouched), [`assets/`](assets) figures and [credits](assets/CREDITS.md).
 
 ## Results so far
+
+### Notebook 01: first CNN
 
 All numbers below come from running notebook 01 (fixed seed 42, CPU, 20,000 training pictures,
 5,000 validation pictures, 10 epochs, evaluation on the official 10,000 Fashion-MNIST test pictures, one run each).
@@ -82,7 +86,23 @@ All numbers below come from running notebook 01 (fixed seed 42, CPU, 20,000 trai
 | Flat-list network (one hidden layer, ignores neighbours) | 50,890 | 84.5% |
 | First CNN (two convolution blocks) | 12,810 | 86.7% |
 
-Chance level is 10%. One run with one seed is not a proof; notebook 02 will repeat the comparison with several seeds.
+Chance level is 10%. One run with one seed is not a proof, which is why notebook 02 repeats a comparison with three seeds.
+
+### Notebook 02: does augmentation help? (3,000 training pictures, 60 epochs, mean of seeds 42, 1, 2, validation set)
+
+| Setting | Validation accuracy | Validation loss | Training minus validation accuracy |
+|---|---|---|---|
+| no augmentation | 0.843 (0.839-0.848) | 0.539 (0.514-0.553) | 0.116 |
+| mild (mirror + shift) | 0.841 (0.834-0.849) | 0.441 (0.426-0.458) | 0.011 |
+| strong (+ rotation, zoom), one run | 0.802 | 0.534 | -0.001 (training 0.801) |
+
+In this experiment mild augmentation removed the symptoms of memorising and lowered the validation loss, but did not raise the accuracy.
+On the test set the notebook-01 CNN recognises sneakers, bags and trousers about 97% of the time but only 50.9% of shirts (most often as T-shirts or pullovers).
+
+<p align="center">
+  <img src="assets/02_train_vs_validation.png" alt="Training and validation accuracy and loss over 60 epochs for no, mild and strong augmentation" width="720"><br>
+  <em>Without augmentation the validation loss rises while the training loss keeps falling (memorising); with mild augmentation the curves stay together.</em>
+</p>
 
 ## Learning journey
 
