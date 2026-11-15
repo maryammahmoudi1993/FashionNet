@@ -6,7 +6,7 @@ Everything that is not the lesson itself lives here, so that the notebooks stay 
 import os
 from pathlib import Path
 
-os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "2")   # keep TensorFlow start-up messages quiet
+os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "3")   # keep TensorFlow start-up messages quiet
 os.environ.setdefault("TF_ENABLE_ONEDNN_OPTS", "0")  # avoid tiny run-to-run rounding differences
 
 import keras
