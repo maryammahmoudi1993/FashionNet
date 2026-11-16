@@ -225,3 +225,59 @@ def plot_confusion(matrix):
             ax.text(j, i, matrix[i, j], ha="center", va="center", fontsize=7,
                     color="white" if matrix[i, j] > matrix.max() / 2 else "black")
     return fig
+
+
+def grad_cam(model, image, class_index=None):
+    """Grad-CAM heat map for one picture (Selvaraju et al., 2017).
+
+    Steps: run the picture through the network, keep the feature maps ``A`` of the last convolution layer,
+    take the gradient of the class score with respect to ``A``, average it over the positions to get one
+    weight per feature map, add up the feature maps with these weights, keep only the positive part, and
+    stretch the small map to the size of the picture.
+
+    The class score is the value *before* the softmax (the "logit"). If ``class_index`` is None
+    the predicted class is explained. Returns ``(heat_map, class_index, probability)``;
+    the heat map has shape (28, 28) with values between 0 and 1.
+    """
+    conv_layer = [layer for layer in model.layers if isinstance(layer, keras.layers.Conv2D)][-1]
+    x = tf.convert_to_tensor(image[None], dtype="float32")
+    with tf.GradientTape() as tape:
+        h, maps = x, None
+        for layer in model.layers[:-1]:
+            h = layer(h)
+            if layer is conv_layer:
+                maps = h                                   # feature maps A, shape (1, 11, 11, 32)
+        head = model.layers[-1]
+        logits = tf.matmul(h, head.kernel) + head.bias     # scores before the softmax
+        if class_index is None:
+            class_index = int(tf.argmax(logits[0]))
+        score = logits[0, class_index]
+    gradients = tape.gradient(score, maps)
+    weights = tf.reduce_mean(gradients, axis=(1, 2))        # one weight per feature map
+    cam = tf.nn.relu(tf.reduce_sum(maps * weights[:, None, None, :], axis=-1))[0]
+    cam = cam / (tf.reduce_max(cam) + 1e-8)
+    cam = tf.image.resize(cam[..., None], (28, 28), method="bilinear")[..., 0].numpy()
+    probability = float(tf.nn.softmax(logits)[0, class_index])
+    return cam, class_index, probability
+
+
+def overlay(ax, image, cam, alpha=0.55):
+    """Draw the picture and the heat map on top of it (red = strong evidence)."""
+    ax.imshow(image[:, :, 0], cmap="gray_r")
+    ax.imshow(cam, cmap="jet", alpha=alpha, vmin=0, vmax=1)
+    ax.axis("off")
+
+
+def occlusion_probability_drop(model, images, centres, size=7):
+    """Cover a ``size`` x ``size`` square (set to background) around each centre and measure the
+    drop in the probability of the originally predicted class."""
+    base = model.predict(images, verbose=0)
+    predicted = base.argmax(axis=1)
+    covered = images.copy()
+    half = size // 2
+    for k, (row, col) in enumerate(centres):
+        r0, c0 = max(0, row - half), max(0, col - half)
+        covered[k, r0:r0 + size, c0:c0 + size, :] = 0.0
+    after = model.predict(covered, verbose=0)
+    index = np.arange(len(images))
+    return base[index, predicted] - after[index, predicted]
