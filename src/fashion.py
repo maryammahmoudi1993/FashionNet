@@ -281,3 +281,23 @@ def occlusion_probability_drop(model, images, centres, size=7):
     after = model.predict(covered, verbose=0)
     index = np.arange(len(images))
     return base[index, predicted] - after[index, predicted]
+
+
+def plot_gradcam_steps(image, maps, weights, raw_map, cam):
+    """The Grad-CAM recipe in six panels: picture, two feature maps, their weights, weighted sum, result."""
+    best, worst = int(np.argmax(weights)), int(np.argmin(weights))
+    fig, axes = plt.subplots(1, 6, figsize=(16, 2.9), gridspec_kw={"width_ratios": [1, 1, 1, 1.6, 1, 1]})
+    axes[0].imshow(image[:, :, 0], cmap="gray_r"); axes[0].set_title("1. the picture", fontsize=9)
+    axes[1].imshow(maps[:, :, best], cmap="viridis")
+    axes[1].set_title(f"2. feature map {best}\nweight {weights[best]:+.4f} (largest)", fontsize=9)
+    axes[2].imshow(maps[:, :, worst], cmap="viridis")
+    axes[2].set_title(f"feature map {worst}\nweight {weights[worst]:+.4f} (smallest)", fontsize=9)
+    axes[3].bar(range(len(weights)), weights, color=["tab:red" if w > 0 else "tab:blue" for w in weights])
+    axes[3].set_title("3. one weight per feature map", fontsize=9); axes[3].set_xlabel("feature map")
+    limit = np.abs(raw_map).max()
+    axes[4].imshow(raw_map, cmap="RdBu_r", vmin=-limit, vmax=limit)
+    axes[4].set_title("4. weighted sum\n(red > 0, blue < 0)", fontsize=9)
+    overlay(axes[5], image, cam); axes[5].set_title("5. keep the positive part,\nstretch, overlay", fontsize=9)
+    for k in (0, 1, 2, 4):
+        axes[k].axis("off")
+    return fig
