@@ -51,3 +51,22 @@ def test_augmented_model_and_confusion_matrix():
     y_true = np.array([0, 0, 1, 2]); y_pred = np.array([0, 1, 1, 2])
     matrix = fashion.confusion_matrix(y_true, y_pred)
     assert matrix[0, 0] == 1 and matrix[0, 1] == 1 and matrix.sum() == 4
+
+
+def test_grad_cam_shape_range_and_class():
+    fashion.set_seed()
+    model = fashion.build_cnn()
+    image = np.random.default_rng(0).random((28, 28, 1)).astype("float32")
+    cam, predicted, probability = fashion.grad_cam(model, image)
+    assert cam.shape == (28, 28) and cam.min() >= 0.0 and cam.max() <= 1.0 + 1e-6
+    assert predicted == int(model(image[None]).numpy().argmax()) and 0.0 <= probability <= 1.0
+    other, chosen, _ = fashion.grad_cam(model, image, class_index=3)
+    assert chosen == 3 and other.shape == (28, 28)
+
+
+def test_occlusion_drop_is_zero_for_a_blank_square_on_a_blank_picture():
+    fashion.set_seed()
+    model = fashion.build_cnn()
+    blank = np.zeros((1, 28, 28, 1), dtype="float32")
+    drop = fashion.occlusion_probability_drop(model, blank, [(14, 14)])
+    assert abs(float(drop[0])) < 1e-6

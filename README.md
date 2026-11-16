@@ -6,13 +6,13 @@
 
 [![Open notebook 01 in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/maryammahmoudi1993/FashionNet/blob/main/notebooks/01_images_as_numbers_and_first_cnn.ipynb)
 
-> **Status: in progress.** Notebooks 01 and 02 are ready. Notebook 03 is planned (see the table of contents).
+> **Status:** all three notebooks are ready.
 
 ## Who this is for
 
 - **For:** learners who know basic Python and NumPy and have never trained a neural network on images.
 - **Not needed:** a GPU, a maths degree, or your own data. Everything runs on a laptop CPU.
-- **Time:** about 25 minutes for notebook 01 (about one minute of training) and about 30 minutes for notebook 02 (about six minutes of training).
+- **Time:** about 25 minutes for notebook 01 (about one minute of training) about 30 minutes for notebook 02 (about six minutes of training) and about 30 minutes for notebook 03 (about one minute of training).
 
 ## What you will learn
 
@@ -22,6 +22,7 @@
 - Why we keep separate training, validation and test sets. (01)
 - How to spot a network that memorises, and how to test data augmentation honestly with several seeds. (02)
 - How to read a confusion matrix to see which classes get mixed up. (02)
+- How to compute a Grad-CAM heat map from scratch, read it, and test it with an occlusion experiment instead of trusting it blindly. (03)
 
 ## The pipeline in one picture
 
@@ -55,7 +56,7 @@ jupyter lab notebooks/
 
 If `jupyter` is not found, run `pip install jupyterlab` first (it is not needed to run the tests).
 
-Check that everything works (runs the smoke tests and every notebook, about eight minutes):
+Check that everything works (runs the smoke tests and every notebook, about nine minutes):
 
 ```bash
 python -m pytest -q
@@ -69,7 +70,7 @@ The data (Fashion-MNIST, a few megabytes) is downloaded automatically on the fir
 |---|---|---|---|
 | 01 | [Images are numbers: your first CNN](notebooks/01_images_as_numbers_and_first_cnn.ipynb) | pixels, convolution, pooling, a first CNN, honest evaluation | ready |
 | 02 | [Make it robust: augmentation, learning curves, confusion matrix](notebooks/02_augmentation_curves_confusion.ipynb) | memorising versus learning, augmentation tested with 3 seeds, reading a confusion matrix | ready |
-| 03 | Look inside: Grad-CAM, then versus now | planned | |
+| 03 | [Looking inside: Grad-CAM](notebooks/03_grad_cam_looking_inside.ipynb) | Grad-CAM step by step, heat maps for correct and wrong predictions, an occlusion test of the heat map and its limits | ready |
 
 Other folders: [`src/`](src) shared code, [`tests/`](tests) smoke test and a test that runs every notebook,
 [`legacy/`](legacy) the original 2023 files (untouched), [`assets/`](assets) figures and [credits](assets/CREDITS.md).
@@ -104,6 +105,24 @@ On the test set the notebook-01 CNN recognises sneakers, bags and trousers about
   <em>Without augmentation the validation loss rises while the training loss keeps falling (memorising); with mild augmentation the curves stay together.</em>
 </p>
 
+### Notebook 03: Grad-CAM and its limits (the CNN of notebook 01, 1,000 test pictures)
+
+| Check | Result |
+|---|---|
+| test accuracy of the explained CNN | 0.867 |
+| pictures with a completely empty Grad-CAM map | 263 of 1,000 |
+| probability drop when a 7 x 7 square is covered at the heat-map peak | 0.080 |
+| ... at a random pixel of the garment | 0.116 |
+| ... at a random pixel anywhere | 0.059 |
+
+The heat maps look convincing for some classes (trousers, sandals, bags) but are empty for others (dress, coat), and covering the highlighted place hurt the prediction *less* than covering a random pixel of the garment.
+A heat map is a hypothesis about the network, not a proof of what it uses.
+
+<p align="center">
+  <img src="assets/03_gradcam_per_class.png" alt="One test picture per class with its Grad-CAM heat map overlaid" width="900"><br>
+  <em>Grad-CAM for one correctly recognised picture of each class: informative for some, empty for dress and coat.</em>
+</p>
+
 ## Learning journey
 
 | | **Then (2023, in [`legacy/`](legacy))** | **Now** |
@@ -113,6 +132,16 @@ On the test set the notebook-01 CNN recognises sneakers, bags and trousers about
 | Data | a local, modified DeepFashion2 folder on a Windows path; not in the repository | Fashion-MNIST, downloaded automatically; licence documented |
 | Evaluation | validation data was built with the *training* labels in `deep_net.py`; no seed; no results shown | separate train / validation / test sets, fixed seed, results table, tests |
 | Explanation | none | pictures and a short "what to notice" after every cell |
+
+## Then versus now
+
+| Question | Then (2023, [`legacy/`](legacy)) | Now (this repository) |
+|---|---|---|
+| Can you run it? | no: private data on a Windows path, undefined names in `deep_net.py` | yes: one command, public data, tests and CI that run every notebook |
+| How do you know it works? | no results were ever shown | seeds, validation and test sets, tables of real numbers, repeated seeds where a claim is made |
+| What does the model look at? | not asked | Grad-CAM, with an occlusion test that shows its limits |
+| What would you trust? | accuracy only (if it had run) | the confusion matrix, the train/validation gap, and an explicit list of what the heat map cannot show |
+| Biggest lesson | "bigger network = better" (13 convolution layers) | a 2-layer CNN already works; augmentation did not raise accuracy here; explanations need tests |
 
 What I would do differently: start small, keep a locked test set, fix the seed, and write down what each step teaches.
 The original code did not run end to end (see [`legacy/ABOUT.md`](legacy/ABOUT.md)); it is kept as it was.
